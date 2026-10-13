@@ -333,7 +333,6 @@ type SearchRequest = {
   query: string;
   pageno: number;
   time_range?: string;
-  effectiveLanguage: string;
   effectiveSafesearch?: number;
   filters: NormalizedFilters;
   timeoutMs: number;
@@ -570,10 +569,6 @@ function combineEmptyResponses(results: InstanceSearchResult[]): MultiInstanceSe
   };
 }
 
-function getDefaultLanguage(): string {
-  return process.env.SEARXNG_DEFAULT_LANGUAGE ?? "all";
-}
-
 function getDefaultResponseFormat(mcpServer: McpServer): ResponseFormat {
   const rawValue = process.env.SEARXNG_DEFAULT_RESPONSE_FORMAT;
   if (rawValue === undefined || rawValue.trim() === "") {
@@ -622,10 +617,6 @@ function normalizeTimeRangeParam(value: string | undefined): string | undefined 
     : undefined;
 }
 
-function normalizeLanguageParam(value: string | undefined): string | undefined {
-  return value && value !== "all" ? value : undefined;
-}
-
 function normalizeSafesearchParam(value: number | undefined): string | undefined {
   return value !== undefined && [0, 1, 2].includes(value) ? value.toString() : undefined;
 }
@@ -642,7 +633,6 @@ function buildSearchUrl(instanceUrl: string, request: SearchRequest): URL {
     ["format", "json"],
     ["pageno", request.pageno.toString()],
     ["time_range", normalizeTimeRangeParam(request.time_range)],
-    ["language", normalizeLanguageParam(request.effectiveLanguage)],
     ["safesearch", normalizeSafesearchParam(request.effectiveSafesearch)],
     ["categories", normalizeTruthyParam(request.filters.categories)],
     ["engines", normalizeTruthyParam(request.filters.engines)],
@@ -953,7 +943,6 @@ export async function performWebSearch(
     : num_results;
   const maxResultChars = getMaxResultChars(mcpServer);
 
-  const effectiveLanguage = language ?? getDefaultLanguage();
   const effectiveSafesearch = safesearch !== undefined ? safesearch : getDefaultSafesearch(mcpServer);
 
   const validationError = validateEnvironment();
@@ -968,7 +957,6 @@ export async function performWebSearch(
   // Build detailed log message with all parameters
   const searchParams = [
     `page ${pageno}`,
-    `lang: ${effectiveLanguage}`,
     time_range ? `time: ${time_range}` : null,
     effectiveSafesearch !== undefined ? `safesearch: ${effectiveSafesearch}` : null,
     min_score !== undefined ? `min_score: ${min_score}` : null,
@@ -988,7 +976,6 @@ export async function performWebSearch(
     query,
     pageno,
     time_range,
-    effectiveLanguage,
     effectiveSafesearch,
     filters,
     timeoutMs: SEARCH_TIMEOUT_MS,
@@ -998,7 +985,6 @@ export async function performWebSearch(
     query,
     pageno,
     time_range,
-    effectiveLanguage,
     effectiveSafesearch,
     filters,
     min_score,

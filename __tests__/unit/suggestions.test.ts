@@ -241,7 +241,7 @@ async function runTests() {
     }
   }, results);
 
-  await testFunction('language parameter is appended when provided', async () => {
+  await testFunction('language parameter is ignored when provided', async () => {
     envManager.set('SEARXNG_URL', 'https://test-searx.example.com/subpath');
     const mockServer = createMockServer();
     const { mockFetch, getCapturedUrl } = createCapturingMockFetch();
@@ -256,7 +256,7 @@ async function runTests() {
     const url = new URL(getCapturedUrl());
     assert.ok(url.pathname.includes('/subpath/autocompleter'), `Expected /subpath/autocompleter, got ${url.pathname}`);
     assert.equal(url.searchParams.get('q'), 'type');
-    assert.equal(url.searchParams.get('lang'), 'fr');
+    assert.equal(url.searchParams.get('lang'), null);
 
     fetchMocker.restore();
     envManager.restore();

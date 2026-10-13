@@ -224,7 +224,7 @@ export const WEB_SEARCH_TOOL: Tool = {
       language: {
         type: "string",
         description:
-          "Language code for search results (e.g., 'en', 'fr', 'de'). Default is instance-dependent.",
+          "Accepted for compatibility but ignored; result language is selected by the SearXNG instance.",
         default: "all",
       },
       safesearch: {
@@ -290,7 +290,7 @@ export const SUGGESTIONS_TOOL: Tool = {
       },
       language: {
         type: "string",
-        description: "Language code for suggestions (e.g., 'en', 'fr', 'de') or 'all'. Default: all.",
+        description: "Accepted for compatibility but ignored; suggestion language is selected by the SearXNG instance.",
         default: "all",
       },
     },

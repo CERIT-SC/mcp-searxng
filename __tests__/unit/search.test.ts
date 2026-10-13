@@ -185,7 +185,7 @@ async function runTests() {
     assert.ok(url.searchParams.get('q') === 'test query');
     assert.ok(url.searchParams.get('pageno') === '2');
     assert.ok(url.searchParams.get('time_range') === 'day');
-    assert.ok(url.searchParams.get('language') === 'en');
+    assert.equal(url.searchParams.get('language'), null);
     assert.ok(url.searchParams.get('safesearch') === '1');
     assert.ok(url.searchParams.get('format') === 'json');
 
@@ -459,7 +459,7 @@ async function runTests() {
     assert.equal(htmlUrl.searchParams.get('q'), 'html query');
     assert.equal(htmlUrl.searchParams.get('pageno'), '2');
     assert.equal(htmlUrl.searchParams.get('time_range'), 'week');
-    assert.equal(htmlUrl.searchParams.get('language'), 'en');
+    assert.equal(htmlUrl.searchParams.get('language'), null);
     assert.equal(htmlUrl.searchParams.get('safesearch'), '1');
     assert.equal(htmlUrl.searchParams.get('categories'), 'general');
     assert.equal(payload.sourceFormat, 'html');
@@ -920,7 +920,7 @@ async function runTests() {
     })();
   }), results);
 
-  await testFunction('Different effective args do not share cached results', async () => {
+  await testFunction('Different effective args do not share cached results, except language', async () => {
     searchCache.clear();
     clearInstanceInfoCacheForTests();
     clearSearxngInstanceStateForTests();
@@ -964,7 +964,7 @@ async function runTests() {
     envManager.set('SEARXNG_URL', 'https://cache-c.example.com;https://cache-d.example.com');
     await performWebSearch(mockServer as any, 'variant query', 1, undefined, 'fr', 2, undefined, 2, 'News', 'Google', 'json');
 
-    assert.equal(searchFetchCount, 9);
+    assert.equal(searchFetchCount, 8);
 
     fetchMocker.restore();
     envManager.restore();
@@ -2071,7 +2071,7 @@ async function runTests() {
     envManager.restore();
   }, results);
 
-  await testFunction('SEARXNG_DEFAULT_LANGUAGE sets language when per-call language is omitted', async () => {
+  await testFunction('SEARXNG_DEFAULT_LANGUAGE is ignored', async () => {
     envManager.set('SEARXNG_URL', 'https://test-searx.example.com');
     envManager.set('SEARXNG_DEFAULT_LANGUAGE', 'fr');
 
@@ -2090,13 +2090,13 @@ async function runTests() {
     }
 
     const url = new URL(getCapturedUrl());
-    assert.equal(url.searchParams.get('language'), 'fr', 'Expected language=fr from SEARXNG_DEFAULT_LANGUAGE');
+    assert.equal(url.searchParams.get('language'), null, 'Language must not be sent to SearXNG');
 
     fetchMocker.restore();
     envManager.restore();
   }, results);
 
-  await testFunction('Per-call language overrides SEARXNG_DEFAULT_LANGUAGE', async () => {
+  await testFunction('Per-call language is ignored', async () => {
     envManager.set('SEARXNG_URL', 'https://test-searx.example.com');
     envManager.set('SEARXNG_DEFAULT_LANGUAGE', 'fr');
 
@@ -2115,7 +2115,7 @@ async function runTests() {
     }
 
     const url = new URL(getCapturedUrl());
-    assert.equal(url.searchParams.get('language'), 'de', 'Per-call language should override env default');
+    assert.equal(url.searchParams.get('language'), null, 'Language must not be sent to SearXNG');
 
     fetchMocker.restore();
     envManager.restore();

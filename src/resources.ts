@@ -118,7 +118,7 @@ Performs web searches using the configured SearXNG instance or replica list, wit
 - \`query\` (required): The search query string
 - \`pageno\` (optional): Page number (default: 1)
 - \`time_range\` (optional): Filter by time - "day", "week", "month", or "year"
-- \`language\` (optional): Language code like "en", "fr", "de" (default: "all")
+- \`language\` (optional): Accepted for compatibility but ignored.
 - \`safesearch\` (optional): Safe search level - 0 (none), 1 (moderate), 2 (strict)
 - \`min_score\` (optional): Minimum relevance score from 0.0 to 1.0
 - \`num_results\` (optional): Maximum result count from 1 to 20
@@ -136,7 +136,7 @@ Returns autocomplete suggestions from the configured SearXNG instance.
 
 **Parameters:**
 - \`query\` (required): Partial or complete query to autocomplete
-- \`language\` (optional): Language code like "en", "fr", "de" or "all" (default: "all")
+- \`language\` (optional): Accepted for compatibility but ignored.
 
 ### 3. searxng_instance_info
 Discovers categories, engines, defaults, locales, and plugins exposed by all reachable configured SearXNG instances. The response reports \`common\` values present on every reachable instance and \`available\` values present on at least one reachable instance.

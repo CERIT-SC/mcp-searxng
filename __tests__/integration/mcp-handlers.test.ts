@@ -837,7 +837,7 @@ async function runTests() {
     assert.doesNotMatch(serverSource, /@modelcontextprotocol\/sdk/);
   }, results);
 
-  await testFunction('tools/call searxng_web_search with SEARXNG_LITE_TOOLS=true still uses language arg', async () => {
+  await testFunction('tools/call searxng_web_search with SEARXNG_LITE_TOOLS=true ignores language arg', async () => {
     process.env.SEARXNG_LITE_TOOLS = 'true';
     process.env.SEARXNG_URL = 'http://localhost:8080';
 
@@ -854,7 +854,7 @@ async function runTests() {
 
     await client.callTool({ name: 'searxng_web_search', arguments: { query: 'test', language: 'fr' } });
 
-    assert.equal(new URL(capturedUrl).searchParams.get('language'), 'fr');
+    assert.equal(new URL(capturedUrl).searchParams.get('language'), null);
 
     fetchMocker.restore();
     delete process.env.SEARXNG_LITE_TOOLS;

@@ -240,7 +240,7 @@ async function executeWebSearch(mcpServer: McpServer, args: unknown): Promise<To
     args.query,
     args.pageno,
     args.time_range,
-    args.language,
+    undefined,
     args.safesearch === undefined ? undefined : Number(args.safesearch),
     args.min_score,
     args.num_results,
@@ -253,7 +253,7 @@ async function executeWebSearch(mcpServer: McpServer, args: unknown): Promise<To
 
 async function executeSuggestions(mcpServer: McpServer, args: unknown): Promise<ToolCallResult> {
   if (!isSearXNGSearchSuggestionsArgs(args)) throw new Error("Invalid arguments for search suggestions");
-  const suggestions = await performSearchSuggestions(mcpServer, args.query, args.language);
+  const suggestions = await performSearchSuggestions(mcpServer, args.query);
   return textToolResult(JSON.stringify({ query: args.query, suggestions }, null, 2));
 }
 
