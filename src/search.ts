@@ -332,7 +332,6 @@ type NormalizedFilters = {
 type SearchRequest = {
   query: string;
   pageno: number;
-  time_range?: string;
   effectiveSafesearch?: number;
   filters: NormalizedFilters;
   timeoutMs: number;
@@ -357,34 +356,6 @@ type FailedInstanceResult = {
 
 type ResponseFormat = "text" | "json";
 const warnedInvalidDefaultResponseFormat = new WeakSet<McpServer>();
-
-async function validateTimeRangeSupport(
-  mcpServer: McpServer,
-  engines: string | undefined,
-  timeRange: string | undefined,
-): Promise<void> {
-  if (!engines || !timeRange) {
-    return;
-  }
-
-  const requestedEngines = splitCommaSeparated(engines);
-  const support = await getEngineTimeRangeSupport(mcpServer, requestedEngines);
-  if (support === null) {
-    throw new MCPSearXNGError(
-      `Cannot verify whether the selected engines support time_range=${timeRange} because SearXNG /config is unavailable. ` +
-      "Retry after capability discovery is available, or omit time_range."
-    );
-  }
-
-  const incompatible = [...support.unsupported, ...support.unknown];
-  if (incompatible.length > 0) {
-    throw new MCPSearXNGError(
-      `The selected ${incompatible.length === 1 ? "engine does" : "engines do"} not confirm support for ` +
-      `time_range=${timeRange}: ${incompatible.join(", ")}. SearXNG skips incompatible engines and can return a misleading empty result. ` +
-      "Omit time_range or use an engine-specific query filter; this adapter will not silently change the requested filter."
-    );
-  }
-}
 
 async function normalizeSearchFilters(
   mcpServer: McpServer,
@@ -611,12 +582,6 @@ function getDefaultSafesearch(mcpServer: McpServer): number | undefined {
   return parsed;
 }
 
-function normalizeTimeRangeParam(value: string | undefined): string | undefined {
-  return value !== undefined && ["day", "week", "month", "year"].includes(value)
-    ? value
-    : undefined;
-}
-
 function normalizeSafesearchParam(value: number | undefined): string | undefined {
   return value !== undefined && [0, 1, 2].includes(value) ? value.toString() : undefined;
 }
@@ -632,7 +597,6 @@ function buildSearchUrl(instanceUrl: string, request: SearchRequest): URL {
     ["q", request.query],
     ["format", "json"],
     ["pageno", request.pageno.toString()],
-    ["time_range", normalizeTimeRangeParam(request.time_range)],
     ["safesearch", normalizeSafesearchParam(request.effectiveSafesearch)],
     ["categories", normalizeTruthyParam(request.filters.categories)],
     ["engines", normalizeTruthyParam(request.filters.engines)],
@@ -952,12 +916,9 @@ export async function performWebSearch(
   }
 
   const filters = await normalizeSearchFilters(mcpServer, categories, engines);
-  await validateTimeRangeSupport(mcpServer, filters.engines, time_range);
-
   // Build detailed log message with all parameters
   const searchParams = [
     `page ${pageno}`,
-    time_range ? `time: ${time_range}` : null,
     effectiveSafesearch !== undefined ? `safesearch: ${effectiveSafesearch}` : null,
     min_score !== undefined ? `min_score: ${min_score}` : null,
     effectiveMax !== undefined ? `num_results: ${effectiveMax}` : null,
@@ -975,7 +936,6 @@ export async function performWebSearch(
   const request: SearchRequest = {
     query,
     pageno,
-    time_range,
     effectiveSafesearch,
     filters,
     timeoutMs: SEARCH_TIMEOUT_MS,
@@ -984,7 +944,6 @@ export async function performWebSearch(
   const cacheArgs: Record<string, unknown> = {
     query,
     pageno,
-    time_range,
     effectiveSafesearch,
     filters,
     min_score,

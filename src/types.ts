@@ -195,8 +195,7 @@ export const WEB_SEARCH_TOOL: Tool = {
     "Searches the web using SearXNG and returns a list of results, each with a title, URL, and content snippet. " +
     "CRITICAL: The required parameter name is exactly `query` (not `prompt`, `q`, or any other name). " +
     "Calls an external SearXNG instance; availability depends on the `SEARXNG_URL` configuration. " +
-    "Use `pageno` to paginate results; combine `time_range` and `language` to narrow scope. " +
-    "When `engines` and `time_range` are both provided, every selected engine must explicitly advertise time-range support via SearXNG /config; otherwise the request is rejected before search. " +
+    "Use `pageno` to paginate results. " +
     "To read the full text of a result URL, follow up with `web_url_read`.",
   annotations: {
     readOnlyHint: true,
@@ -218,7 +217,7 @@ export const WEB_SEARCH_TOOL: Tool = {
       },
       time_range: {
         type: "string",
-        description: "Time range of search (day, week, month, year). With explicit engines, all selected engines must confirm time_range_support=true via /config.",
+        description: "Accepted for compatibility but ignored.",
         enum: ["day", "week", "month", "year"],
       },
       language: {

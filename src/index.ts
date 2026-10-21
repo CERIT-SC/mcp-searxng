@@ -239,7 +239,7 @@ async function executeWebSearch(mcpServer: McpServer, args: unknown): Promise<To
     mcpServer,
     args.query,
     args.pageno,
-    args.time_range,
+    undefined,
     undefined,
     args.safesearch === undefined ? undefined : Number(args.safesearch),
     args.min_score,

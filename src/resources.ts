@@ -117,7 +117,7 @@ Performs web searches using the configured SearXNG instance or replica list, wit
 **Parameters:**
 - \`query\` (required): The search query string
 - \`pageno\` (optional): Page number (default: 1)
-- \`time_range\` (optional): Filter by time - "day", "week", "month", or "year"
+- \`time_range\` (optional): Accepted for compatibility but ignored.
 - \`language\` (optional): Accepted for compatibility but ignored.
 - \`safesearch\` (optional): Safe search level - 0 (none), 1 (moderate), 2 (strict)
 - \`min_score\` (optional): Minimum relevance score from 0.0 to 1.0
