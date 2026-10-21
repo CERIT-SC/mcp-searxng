@@ -184,8 +184,8 @@ async function runTests() {
     assert.equal(url.pathname, '/search');
     assert.ok(url.searchParams.get('q') === 'test query');
     assert.ok(url.searchParams.get('pageno') === '2');
-    assert.ok(url.searchParams.get('time_range') === 'day');
-    assert.ok(url.searchParams.get('language') === 'en');
+    assert.equal(url.searchParams.get('time_range'), null);
+    assert.equal(url.searchParams.get('language'), null);
     assert.ok(url.searchParams.get('safesearch') === '1');
     assert.ok(url.searchParams.get('format') === 'json');
 
@@ -193,7 +193,7 @@ async function runTests() {
     envManager.restore();
   }, results);
 
-  await testFunction('URL construction supports week time range', async () => {
+  await testFunction('time_range is ignored', async () => {
     envManager.set('SEARXNG_URL', 'https://test-searx.example.com');
 
     const mockServer = createMockServer();
@@ -211,7 +211,7 @@ async function runTests() {
     }
 
     const url = new URL(getCapturedUrl());
-    assert.equal(url.searchParams.get('time_range'), 'week');
+    assert.equal(url.searchParams.get('time_range'), null);
 
     fetchMocker.restore();
     envManager.restore();
@@ -458,8 +458,8 @@ async function runTests() {
     assert.equal(htmlUrl.searchParams.get('format'), null);
     assert.equal(htmlUrl.searchParams.get('q'), 'html query');
     assert.equal(htmlUrl.searchParams.get('pageno'), '2');
-    assert.equal(htmlUrl.searchParams.get('time_range'), 'week');
-    assert.equal(htmlUrl.searchParams.get('language'), 'en');
+    assert.equal(htmlUrl.searchParams.get('time_range'), null);
+    assert.equal(htmlUrl.searchParams.get('language'), null);
     assert.equal(htmlUrl.searchParams.get('safesearch'), '1');
     assert.equal(htmlUrl.searchParams.get('categories'), 'general');
     assert.equal(payload.sourceFormat, 'html');
@@ -920,7 +920,7 @@ async function runTests() {
     })();
   }), results);
 
-  await testFunction('Different effective args do not share cached results', async () => {
+  await testFunction('Different effective args do not share cached results, except language', async () => {
     searchCache.clear();
     clearInstanceInfoCacheForTests();
     clearSearxngInstanceStateForTests();
@@ -964,7 +964,7 @@ async function runTests() {
     envManager.set('SEARXNG_URL', 'https://cache-c.example.com;https://cache-d.example.com');
     await performWebSearch(mockServer as any, 'variant query', 1, undefined, 'fr', 2, undefined, 2, 'News', 'Google', 'json');
 
-    assert.equal(searchFetchCount, 9);
+    assert.equal(searchFetchCount, 8);
 
     fetchMocker.restore();
     envManager.restore();
@@ -1650,34 +1650,7 @@ async function runTests() {
     envManager.restore();
   }, results);
 
-  await testFunction('explicit engine with unsupported time_range is rejected before search', async () => {
-    clearInstanceInfoCacheForTests();
-    envManager.set('SEARXNG_URL', 'https://test-searx.example.com');
-
-    const mockServer = createMockServer();
-    const requestedUrls: string[] = [];
-    fetchMocker.mock(async (url) => {
-      requestedUrls.push(url.toString());
-      return createMockFetch({ json: makeConfigWithEngines() })(url);
-    });
-
-    try {
-      await performWebSearch(mockServer as any, 'AI', 1, 'year', undefined, undefined, undefined, undefined, undefined, 'github');
-      assert.fail('Expected incompatible time_range to be rejected');
-    } catch (error: any) {
-      assert.ok(error.message.includes('github'), error.message);
-      assert.ok(error.message.includes('time_range=year'), error.message);
-      assert.ok(error.message.includes('misleading empty result'), error.message);
-    }
-
-    assert.equal(requestedUrls.length, 1);
-    assert.ok(new URL(requestedUrls[0]).pathname.endsWith('/config'));
-
-    fetchMocker.restore();
-    envManager.restore();
-  }, results);
-
-  await testFunction('explicit engine with supported time_range reaches search unchanged', async () => {
+  await testFunction('time_range is ignored with explicit engines', async () => {
     clearInstanceInfoCacheForTests();
     envManager.set('SEARXNG_URL', 'https://test-searx.example.com');
 
@@ -1696,62 +1669,7 @@ async function runTests() {
     assert.equal(requestedUrls.length, 2);
     const searchUrl = new URL(requestedUrls[1]);
     assert.equal(searchUrl.searchParams.get('engines'), 'google');
-    assert.equal(searchUrl.searchParams.get('time_range'), 'year');
-
-    fetchMocker.restore();
-    envManager.restore();
-  }, results);
-
-  await testFunction('unavailable /config rejects explicit engine plus time_range without searching', async () => {
-    clearInstanceInfoCacheForTests();
-    envManager.set('SEARXNG_URL', 'https://test-searx.example.com');
-
-    const mockServer = createMockServer();
-    const requestedUrls: string[] = [];
-    fetchMocker.mock(async (url) => {
-      requestedUrls.push(url.toString());
-      return createMockFetch({ ok: false, status: 403, statusText: 'Forbidden' })(url);
-    });
-
-    try {
-      await performWebSearch(mockServer as any, 'AI', 1, 'year', undefined, undefined, undefined, undefined, undefined, 'github');
-      assert.fail('Expected unavailable capability discovery to stop the search');
-    } catch (error: any) {
-      assert.ok(error.message.includes('/config is unavailable'), error.message);
-      assert.ok(error.message.includes('omit time_range') || error.message.includes('Omit time_range'), error.message);
-    }
-
-    assert.equal(requestedUrls.length, 1);
-    assert.ok(new URL(requestedUrls[0]).pathname.endsWith('/config'));
-
-    fetchMocker.restore();
-    envManager.restore();
-  }, results);
-
-  await testFunction('partial multi-instance /config failure rejects time_range before search', async () => {
-    clearInstanceInfoCacheForTests();
-    envManager.set('SEARXNG_URL', 'https://up.example.com;https://down.example.com');
-
-    const mockServer = createMockServer();
-    const requestedUrls: string[] = [];
-    fetchMocker.mock(async (url, options) => {
-      requestedUrls.push(url.toString());
-      if (new URL(url.toString()).origin === 'https://down.example.com') {
-        throw new Error('temporary outage');
-      }
-      return createMockFetch({ json: makeConfigWithEngines() })(url, options);
-    });
-
-    try {
-      await performWebSearch(mockServer as any, 'AI', 1, 'year', undefined, undefined, undefined, undefined, undefined, 'google');
-      assert.fail('Expected partial capability discovery failure to reject the search');
-    } catch (error: any) {
-      assert.ok(error.message.includes('google'), error.message);
-      assert.ok(error.message.includes('time_range=year'), error.message);
-    }
-
-    assert.equal(requestedUrls.length, 2);
-    assert.ok(requestedUrls.every((requestedUrl) => new URL(requestedUrl).pathname.endsWith('/config')));
+    assert.equal(searchUrl.searchParams.get('time_range'), null);
 
     fetchMocker.restore();
     envManager.restore();
@@ -2071,7 +1989,7 @@ async function runTests() {
     envManager.restore();
   }, results);
 
-  await testFunction('SEARXNG_DEFAULT_LANGUAGE sets language when per-call language is omitted', async () => {
+  await testFunction('SEARXNG_DEFAULT_LANGUAGE is ignored', async () => {
     envManager.set('SEARXNG_URL', 'https://test-searx.example.com');
     envManager.set('SEARXNG_DEFAULT_LANGUAGE', 'fr');
 
@@ -2090,13 +2008,13 @@ async function runTests() {
     }
 
     const url = new URL(getCapturedUrl());
-    assert.equal(url.searchParams.get('language'), 'fr', 'Expected language=fr from SEARXNG_DEFAULT_LANGUAGE');
+    assert.equal(url.searchParams.get('language'), null, 'Language must not be sent to SearXNG');
 
     fetchMocker.restore();
     envManager.restore();
   }, results);
 
-  await testFunction('Per-call language overrides SEARXNG_DEFAULT_LANGUAGE', async () => {
+  await testFunction('Per-call language is ignored', async () => {
     envManager.set('SEARXNG_URL', 'https://test-searx.example.com');
     envManager.set('SEARXNG_DEFAULT_LANGUAGE', 'fr');
 
@@ -2115,7 +2033,7 @@ async function runTests() {
     }
 
     const url = new URL(getCapturedUrl());
-    assert.equal(url.searchParams.get('language'), 'de', 'Per-call language should override env default');
+    assert.equal(url.searchParams.get('language'), null, 'Language must not be sent to SearXNG');
 
     fetchMocker.restore();
     envManager.restore();

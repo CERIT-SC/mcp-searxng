@@ -11,7 +11,7 @@ import { getPrimarySearxngInstance, stripSearxngInstanceUrlUserinfo } from "./se
 export async function performSearchSuggestions(
   mcpServer: McpServer,
   query: string,
-  language: string = "all",
+  _language: string = "all",
 ): Promise<string[]> {
   const base = getPrimarySearxngInstance();
   if (!base) {
@@ -22,9 +22,6 @@ export async function performSearchSuggestions(
   const parsedBase = new URL(base.endsWith("/") ? base : `${base}/`);
   const url = new URL("autocompleter", parsedBase);
   url.searchParams.set("q", query);
-  if (language !== "all") {
-    url.searchParams.set("lang", language);
-  }
   const requestUrl = stripSearxngInstanceUrlUserinfo(url);
 
   try {
